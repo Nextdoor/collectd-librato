@@ -185,15 +185,24 @@ The following parameters are optional:
   used with Librato Metrics you can set the `Source` variable to a
   different source name.
 
-* `IncludeRegex` - This option can be used to control the metrics that
+* `MetricRegex` - This option can be used to control the metrics that
   are sent to Librato Metrics. It should be set to a comma-separated
   list of regular expression patterns to match metric names
-  against. If a metric name does not match one of the regex's in this
-  variable, it will not be sent to Librato Metrics. By default, all
+  against. Depending on if you specify Blacklist or Whitelist, MetricRegex
+  will either send those you list or ignore those you list. By default, all
   metrics in collectd are sent to Librato Metrics. For example, the
-  following restricts the set of metrics to CPU and select df metrics:
+  following restricts the set of metrics to CPU and select df metrics when
+  Whitelist is defined:
 
-  `IncludeRegex "collectd.cpu.*,collectd.df.df.dev.free,collectd.df.df.root.free"`
+  `MetricRegex "collectd.cpu.*,collectd.df.df.dev.free,collectd.df.df.root.free"`
+
+  If Blacklist is defined, these metrics will not be sent but everything else will.
+
+* `Blacklist` - If present, MetricRegex is treated as a blacklist and
+  will send every metric but the ones matched in MetricRegex. Mutually exclusive with below.
+
+* `Whitelist` - If present, MetricRegex is treated as a whitelist and
+  will send only metrics matched in MetricRegex. Mutually exclusive with above.
 
 ## Example
 
