@@ -153,8 +153,12 @@ def librato_config(c):
             config['single_value_names'] = True
         elif child.key == 'Source':
             config['source'] = val
-        elif child.key == 'IncludeRegex':
-            config['include_regex'] = val.split(',') if val else []
+        elif child.key == 'MetricRegex':
+            config['metric_regex'] = val.split(',') if val else []
+        elif child.key == 'Whitelist':
+            config['whitelist'] = True
+        elif child.key == 'Blacklist':
+            config['blacklist'] = True
         elif child.key == 'FlushIntervalSecs':
             try:
                 config['flush_interval_secs'] = int(str_to_num(val))
@@ -290,15 +294,30 @@ def librato_write(v, data=None):
         if config['lower_case']:
             metric_name = metric_name.lower()
         
-        regexs = config.get('include_regex', [])
+        regexs = config.get('metric_regex', [])
         matches = len(regexs) == 0
         for regex in regexs:
-          if re.match(regex, metric_name):
-            matches = True
-            break
-        
-        if not matches:
-          continue
+            if re.match(regex, metric_name):
+                matches = True
+                break
+
+        # You can't blacklist and whitelist at the same time
+        regex_whitelist = config.get('whitelist', False)
+        regex_blacklist = config.get('blacklist', False)
+        if regex_blacklist and regex_whitelist:
+            collectd.warning('You cannot define Whitelist and Blacklist at the same time.')
+
+        # If we are operating in whitelist mode and the regex is not matched,
+        # don't send the metric
+        if regex_whitelist:
+            if not matches:
+                continue
+
+        # If we are operating in blacklist mode and the regex is matched,
+        # don't send the metric
+        if regex_blacklist:
+            if matches:
+                continue
 
         measurement = {
             'name' : metric_name,
